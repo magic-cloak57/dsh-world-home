@@ -1,0 +1,23 @@
+# 依赖
+node_modules/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 运行时产物
+*.log
+.out/
+dist/
+
+# 本地配置/密钥（别传）
+.env
+.env.*
+*.local.json
+
+# 系统杂物
+.DS_Store
+Thumbs.db
+
+# ������Կ��SnowLuma �� OneBot HTTP token��
+snowluma.token

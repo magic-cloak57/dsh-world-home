@@ -1,0 +1,8 @@
+# Inserts the dsh-world row enabled: with no config it serves the standard preset as a world named
+# "default" in the system time zone. Override the row by id in a profile to name the companion, pick
+# another preset or turn on the life line (see README).
+#
+# 2026-11-06: 这里原本还 insert 了一个 id/name 都是 `dsh-home` 的旧入口。`dsh-home` 已经并入本包、
+# 独立包不再存在，导致 Host 启动时报 ERR_MODULE_NOT_FOUND 并少激活一个插件。行本身由 profile 的
+# cordis.patch.yml 以 `dsh-world-home` 为 id 插入并带 config，故此处保持为空即可。
+[]
