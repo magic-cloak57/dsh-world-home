@@ -44,4 +44,4 @@ export declare function renderTemplate(template: string, flags: Record<string, b
 export declare function renderWorldPrompt(prompt: WorldPrompt, template: string, self: {
     file: string;
     text: string;
-} | undefined, home: boolean): string;
+} | undefined, home: boolean, group?: boolean): string;

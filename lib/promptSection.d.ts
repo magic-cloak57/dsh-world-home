@@ -6,6 +6,8 @@ import { type WorldPrompt } from './worldPrompt.ts';
 export interface WorldPromptSource {
     prompt: WorldPrompt;
     isHome(sessionId: string): boolean;
+    /** True for a channel group session (QQ group / WeChat group): the prompt then says "this is a chat, not a workbench". */
+    isGroup?(sessionId: string): boolean;
     archiveSession?(sessionId: string): boolean;
 }
 /**
