@@ -1,4 +1,4 @@
-﻿/**
+/**
  * dsh-world — 浏览器半侧：设置里的「世界控制台」。
  * 模块 id 必须等于 bundle 行名 dsh-world；数据来自宿主半侧的 /dsh-world/console/* 路由。
  * 读取是 GET；会改变东西的（开始、停止、人设、家的说明书、额度、记忆轮数）是带 x-dsh-world 头的 JSON POST。
@@ -1094,7 +1094,8 @@ window.__ModuleLoader__.load({
           return h('div', { key: d.day, style: { marginTop: 18 } },
             h('div', { style: { display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 } },
               h('b', { style: { fontSize: 14 } }, d.day),
-              h('span', { style: { opacity: .65, fontSize: 12 } }, '看了 ' + (d.total || d.count || 0) + ' 条，留下 ' + (d.count || 0) + ' 条')),
+              h('span', { style: { opacity: .65, fontSize: 12 } }, '看了 ' + (d.total || d.count || 0) + ' 条，留下 ' + (d.count || 0) + ' 条'),
+              d.warning ? h('span', { style: { fontSize: 12, color: '#d9534f' } }, '⚠ ' + d.warning) : null),
             h('div', { style: { display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))' } },
               list(d.picks).map(function (p) {
                 return h('div', { key: d.day + p.bvid, style: { border: '1px solid rgba(127,127,127,.25)', borderRadius: 10, overflow: 'hidden', display: 'flex', flexDirection: 'column' } },

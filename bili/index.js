@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 刷B站，住进家里来的一间屋子。
  *
  * 原来是单独的插件 dsh-bili-ximeng，自己连阳台、自己开进程；搬进来以后：
@@ -432,19 +432,21 @@ export function createBili(deps) {
      * 只在 md 比 json 新时做，失败不影响窗口。
      */
     const syncThoughts = (day) => {
+        const stat = { blocks: 0, matched: 0, changed: false }
         try {
             const mdFile = join(feedDir, `${day}.md`)
             const jsonFile = join(feedDir, `${day}.json`)
             if (!existsSync(mdFile) || !existsSync(jsonFile))
-                return
+                return stat
             const data = JSON.parse(readFileSync(jsonFile, 'utf8'))
             const picks = Array.isArray(data?.picks) ? data.picks : []
             if (!picks.length || statSync(mdFile).mtimeMs <= (Number(data?.at) || 0))
-                return
+                return stat
             const section = /##\s*我看完的想法\s*([\s\S]*)$/.exec(readFileSync(mdFile, 'utf8'))
             if (!section)
-                return
+                return stat
             const blocks = section[1].split(/\n(?=###\s)/).filter((one) => /^\s*###\s/.test(one))
+            stat.blocks = blocks.length
             const norm = (text) => String(text).replace(/[^\p{L}\p{N}]/gu, '').toLowerCase()
             let changed = false
             for (const block of blocks) {
@@ -460,13 +462,16 @@ export function createBili(deps) {
                     continue
                 if (why && hit.why !== why) { hit.why = why.trim(); changed = true }
                 if (mine && hit.mine !== mine) { hit.mine = mine.trim(); changed = true }
+                stat.matched += 1
             }
             if (!changed)
-                return
+                return stat
             data.at = Date.now()
             writeFileSync(jsonFile, JSON.stringify(data, null, 2), 'utf8')
+            stat.changed = true
         }
         catch { /* 回填失败不影响窗口 */ }
+        return stat
     }
     const readHistory = () => {
         const days = []
@@ -475,14 +480,18 @@ export function createBili(deps) {
                 if (!/^\d{4}-\d{2}-\d{2}\.json$/.test(name))
                     continue
                 const day = name.slice(0, 10)
-                syncThoughts(day)
+                const stat = syncThoughts(day)
                 try {
                     const data = JSON.parse(readFileSync(join(feedDir, name), 'utf8'))
                     // 这扇窗只放“我真看过、写过想法”的视频：没写 why/mine 的候选留在日报里，不塞这里
                     const watched = (data.picks || []).filter((pick) => (pick?.why || '').trim() || (pick?.mine || '').trim())
-                    if (!watched.length)
+                    // 想法写了但一条都没对上候选：多半是格式歪了（2026-11-16 又踩过），留个红字提醒
+                    const warning = stat.blocks > 0 && stat.matched === 0
+                        ? '日报里有 ' + stat.blocks + ' 条想法没同步上——要写成「### 一、标题」+「**为什么点开**：」+「**想法**：」'
+                        : ''
+                    if (!watched.length && !warning)
                         continue
-                    days.push({ day, count: watched.length, total: data.total, picks: watched, notes: data.notes || '' })
+                    days.push({ day, count: watched.length, total: data.total, picks: watched, notes: data.notes || '', warning })
                 }
                 catch { /* 坏文件跳过 */ }
             }
