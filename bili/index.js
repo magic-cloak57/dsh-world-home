@@ -68,21 +68,43 @@ export function createBili(deps) {
     const homeConfig = deps.config || {}
     const log = (message) => deps.log?.(message)
     const warn = (message) => deps.warn?.(message)
-    const py = () => String(homeConfig.pythonPath || 'D:\\AstrBot\\venv\\Scripts\\python.exe')
-
-    try {
-        mkdirSync(stateDir, { recursive: true })
+    /**
+     * 找能用的 Python，按顺序试：配置里写的 → DSH_PYTHON → DSH 自带的运行时 → PATH 里的 python/py。
+     * 不写死任何一台机器的路径：别人装上插件，机器上没有某个特定 venv 也能跑
+     * （2026-11-17 反馈：默认值写死 D:\AstrBot\venv\...，没这台路径的机器上 B 站面板一直显示「未登录」）。
+     */
+    const pythonCandidates = () => {
+        const list = []
+        const configured = String(homeConfig.pythonPath || '').trim()
+        if (configured)
+            list.push(configured)
+        if (process.env.DSH_PYTHON)
+            list.push(process.env.DSH_PYTHON)
+        try {
+            const dshHome = process.env.DSH_HOME || join(process.env.USERPROFILE || '', '.dsh')
+            const bundled = join(dshHome, 'dsh-runtimes', 'dsh-primary-runtime', 'dependencies', 'python', 'python.exe')
+            if (existsSync(bundled))
+                list.push(bundled)
+        }
+        catch { /* 找不到就用 PATH */ }
+        list.push('python', 'py')
+        return [...new Set(list.filter(Boolean))]
     }
-    catch { /* 建不出来也得先跑起来，脚本会自己报 */ }
 
-    /** 跑一个 py 脚本：最后一行 JSON 就是它的回答。 */
-    const call = (script, args) => new Promise((resolve) => {
-        execFile(py(), [join(here, 'py', script), '--home', stateDir, ...args], {
+    /** 跑一次；找不到可执行文件（ENOENT）就交给下一个候选。 */
+    const runPython = (bin, scriptPath, args) => new Promise((resolve) => {
+        execFile(bin, [scriptPath, '--home', stateDir, ...args], {
             timeout: PY_TIMEOUT_MS,
             windowsHide: true,
             maxBuffer: 8 * 1024 * 1024,
             env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1' },
         }, (err, stdout, stderr) => {
+            if (err && err.code === 'ENOENT')
+                return resolve({ retry: true })
+            // 这个 Python 缺依赖（比如没装 requests）：换个候选再试，别直接报「未登录」。
+            const missing = /No module named ['"]([^'"]+)['"]/i.exec(String(stderr || '') + String(stdout || ''))
+            if (err && missing)
+                return resolve({ retry: true, missing: missing[1] })
             const lines = String(stdout || '').split('\n').map((line) => line.trim()).filter(Boolean)
             let data = null
             for (let i = lines.length - 1; i >= 0 && !data; i -= 1) {
@@ -98,6 +120,30 @@ export function createBili(deps) {
             resolve({ ok: false, error: err ? String(err.message) : (String(stderr || '').trim() || 'python 没有输出') })
         })
     })
+
+    /** 跑一个 py 脚本：最后一行 JSON 就是它的回答。 */
+    const call = async (script, args) => {
+        const scriptPath = join(here, 'py', script)
+        let missing = ''
+        for (const bin of pythonCandidates()) {
+            const result = await runPython(bin, scriptPath, args)
+            if (!result || result.retry !== true)
+                return result
+            if (result.missing)
+                missing = result.missing
+        }
+        return {
+            ok: false,
+            error: missing
+                ? `找到的 Python 缺「${missing}」这个依赖：先装它（pip install ${missing}），或者在家配置里填 bili.pythonPath`
+                : '找不到可用的 Python：可以在配置里填 pythonPath，或者把 python 加进 PATH',
+        }
+    }
+
+    try {
+        mkdirSync(stateDir, { recursive: true })
+    }
+    catch { /* 建不出来也得先跑起来，脚本会自己报 */ }
 
     // ── 配置：家里那一节是种子，房间里的 config.json 覆盖它 ──────────────
     const cfgFile = join(stateDir, 'config.json')
@@ -529,7 +575,7 @@ export function createBili(deps) {
             ownerUid: cfg.ownerUid,
             limit: cfg.limit,
             stateDir,
-            python: py(),
+            python: pythonCandidates()[0] || '',
             auto: readAuto(),
             today: { day, report: fileState(join(feedDir, `${day}.md`)), candidates: candidateCount(day) },
         }

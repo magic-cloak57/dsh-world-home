@@ -14,7 +14,7 @@
 | `py/report.py` | 把挑出来的视频整理成日报 JSON（给我自己用，面板的「最近日报」读的是 `.md`） |
 | `py/dm_test.py` | 发一条测试私信，排查用 |
 
-Python 解释器默认 `D:\AstrBot\venv\Scripts\python.exe`，要改就在家配置的 `bili.pythonPath`。
+Python 解释器自动找：家配置的 `bili.pythonPath`（可留空）→ 环境变量 `DSH_PYTHON` → DSH 自带的运行时 → PATH 里的 `python`/`py`，按顺序试第一个能用的。
 
 ## 东西放哪
 

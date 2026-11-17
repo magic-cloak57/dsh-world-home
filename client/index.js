@@ -834,7 +834,7 @@ window.__ModuleLoader__.load({
         h(Card, { title: '群里怎么聊' },
           h('div', { className: 'dw-muted' }, '我说完话后，这一轮陪多久（分钟，默认 5）'),
           h('input', { type: 'number', min: 1, max: 120, value: cfg.silenceMinutes, style: Object.assign({ width: 90 }, field), onChange: function (e) { setCfg(Object.assign({}, cfg, { silenceMinutes: Number(e.target.value) || 5 })) } }),
-          h('div', { className: 'dw-muted', style: { marginTop: 10 } }, '多久检查一次群里有没有新对话（秒，默认 20）'),
+          h('div', { className: 'dw-muted', style: { marginTop: 10 } }, '基础检查间隔（秒，默认 20）：她会越聊越懒，间隔自己会慢慢拉长，被叫到又精神起来'),
           h('input', { type: 'number', min: 3, max: 300, value: cfg.wakeGapSeconds, style: Object.assign({ width: 90 }, field), onChange: function (e) { setCfg(Object.assign({}, cfg, { wakeGapSeconds: Number(e.target.value) || 20 })) } }),
           h('div', { className: 'dw-muted', style: { marginTop: 10 } }, '群白名单（群号，逗号分隔；空着就只认默认配置里的群）'),
           h('input', { type: 'text', placeholder: '比如 200000002', value: cfg.allowGroups, style: Object.assign({ width: 240 }, field), onChange: function (e) { setCfg(Object.assign({}, cfg, { allowGroups: e.target.value })) } }),
@@ -979,7 +979,7 @@ window.__ModuleLoader__.load({
         h(Card, { title: '她的B站' },
           h('div', null, logged
             ? h('span', { className: 'dw-ok' }, '● 已登录　' + (status.uname || '（没拿到昵称）') + '　UID ' + (status.mid || '?') + '　Lv' + (status.level ?? '?'))
-            : h('span', { className: 'dw-bad' }, '○ 未登录　') , logged ? null : h('span', { className: 'dw-muted' }, status.reason || '')),
+            : h('span', { className: 'dw-bad' }, '○ 未登录　') , logged ? null : h('span', { className: status.error ? 'dw-bad' : 'dw-muted' }, status.error || status.reason || '')),
           h('div', { style: { marginTop: 6 } }, h('span', { className: status.enabled ? 'dw-ok' : 'dw-muted' },
             status.enabled ? '● 功能开着' : '● 功能关着'),
             h('span', { className: 'dw-muted' }, ' · 世界' + (status.worldRunning ? '开着' : '停着')
