@@ -348,9 +348,9 @@ window.__ModuleLoader__.load({
             })),
         msg ? h('div', { className: 'dw-muted' }, msg) : null)
     }
-    /** 记忆块带最近几轮：默认 200，下次开始对话或压缩之后生效。 */
+    /** 记忆块带最近几轮：默认 15（另有字符预算兜底），下次开始对话或压缩之后生效。 */
     function Memory(props) {
-      var mem = props.mem, window_ = mem && mem.windowTurns || 200
+      var mem = props.mem, window_ = mem && mem.windowTurns || 15
       var activeScope = mem && mem.archiveScope || 'workspace'
       var scopeNames = { home: '仅家会话', workspace: '家所在工作区' }
       var scopeState = useState(mem && mem.selectedArchiveScope || activeScope), scope = scopeState[0], setScope = scopeState[1]
@@ -358,8 +358,8 @@ window.__ModuleLoader__.load({
       var msgState = useState(''), msg = msgState[0], setMsg = msgState[1]
       function save() {
         var text = String(draft).trim(), value = text === '' ? null : Number(text)
-        if (value !== null && !(Number.isInteger(value) && value >= 1)) { setMsg('请填一个不小于 1 的整数，留空恢复默认 200'); return }
-        post('memory', { turns: value }).then(function () { setMsg('已保存。下次开始对话或压缩之后生效。'); if (value === null) setDraft('200'); if (props.onSaved) props.onSaved() }, function (e) { setMsg('保存失败：' + (e.message || e)) })
+        if (value !== null && !(Number.isInteger(value) && value >= 1)) { setMsg('请填一个不小于 1 的整数，留空恢复默认 15'); return }
+        post('memory', { turns: value }).then(function () { setMsg('已保存。下次开始对话或压缩之后生效。'); if (value === null) setDraft('15'); if (props.onSaved) props.onSaved() }, function (e) { setMsg('保存失败：' + (e.message || e)) })
       }
       function saveScope() {
         post('archive-scope', { scope: scope }).then(function (result) {
@@ -378,7 +378,7 @@ window.__ModuleLoader__.load({
           h('button', { className: 'dw-btn', onClick: saveScope }, '保存范围')),
         mem.restartRequired ? h('div', { key: 'restart', className: 'dw-muted', role: 'status' }, '范围已修改，请重启 DSH。重启前继续使用当前范围。') : null,
         h('div', { key: 's', className: 'dw-setting' },
-          h('input', { type: 'text', inputMode: 'numeric', 'aria-label': '记忆带最近几轮', placeholder: '最近几轮，留空为 200', value: draft, onChange: function (e) { setDraft(e.target.value); setMsg('') } }),
+          h('input', { type: 'text', inputMode: 'numeric', 'aria-label': '记忆带最近几轮', placeholder: '最近几轮，留空为 15', value: draft, onChange: function (e) { setDraft(e.target.value); setMsg('') } }),
           h('button', { className: 'dw-btn', onClick: save }, '保存')),
         msg ? h('div', { key: 'x', className: msg.indexOf('失败') >= 0 || msg.indexOf('请填') >= 0 ? 'dw-bad' : 'dw-muted' }, msg) : null,
       ] : h('div', { className: 'dw-muted' }, '—'))
@@ -426,7 +426,7 @@ window.__ModuleLoader__.load({
           h('input', { type: 'text', inputMode: 'numeric', 'aria-label': '群聊读取上文条数', placeholder: '上文条数，默认 8', value: context, onChange: function (e) { setContext(e.target.value); setMsg('') } }),
           h('input', { type: 'text', inputMode: 'decimal', 'aria-label': '图片缓冲秒数', placeholder: '缓冲秒数，默认 3', value: buffer, onChange: function (e) { setBuffer(e.target.value); setMsg('') } }),
           h('button', { className: 'dw-btn', onClick: save }, '保存')),
-        h('div', { className: 'dw-muted' }, '上文按消息条数算（群聊被 @ 时带上之前几条）；缓冲是私聊图片等待后续图片或文字的秒数。与共享记忆的 200 轮无关。'),
+        h('div', { className: 'dw-muted' }, '上文按消息条数算（群聊被 @ 时带上之前几条）；缓冲是私聊图片等待后续图片或文字的秒数。与共享记忆的 15 轮无关。'),
         msg ? h('div', { className: msg.indexOf('失败') >= 0 || msg.indexOf('请填') >= 0 ? 'dw-bad' : 'dw-muted' }, msg) : null)
     }
     /** QQ：她自己那条 OneBot 通道（原生），以及 SnowLuma 控制台的入口。 */
